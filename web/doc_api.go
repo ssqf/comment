@@ -6,9 +6,9 @@ import (
 	"regexp"
 )
 
-var actRegStr = "/acticle(/[0-9a-zA-z_-]+)?$"
+var actRegStr = "/acticle(/[0-9a-zA-z_-]+)?"
 
-func getActicle(w http.ResponseWriter, r *http.Request) {
+func acticle(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return

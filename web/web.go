@@ -20,6 +20,7 @@ func Run() {
 	c.Add(actRegStr, []string{http.MethodGet, http.MethodPost, http.MethodDelete}, acticle)
 	c.Add("/", []string{http.MethodGet}, index)
 	c.Add("/p", []string{http.MethodPost}, post)
+	c.Add(userRex, []string{http.MethodPost, http.MethodDelete, http.MethodGet, http.MethodPatch}, user)
 
 	err = http.ListenAndServe(bind+":"+port, c) //设置监听的端口
 }

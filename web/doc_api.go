@@ -1,6 +1,7 @@
 package web
 
 import (
+	"document/model"
 	"log"
 	"net/http"
 	"regexp"
@@ -32,4 +33,11 @@ func acticle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+}
+
+var userRex = "/user(/[0-9a-zA-z_-]+)?"
+
+func user(w http.ResponseWriter, r *http.Request) {
+	o := model.GetOperater()
+	o.AddUser(model.User{"", "请我二哥", "", "", "", []string{""}, "", "", 0})
 }

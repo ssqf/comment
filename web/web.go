@@ -3,6 +3,7 @@ package web
 import (
 	"document/config"
 	"document/web/route"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -31,4 +32,23 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 func post(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello"))
+}
+
+func getBody(r *http.Request) ([]byte, error) {
+	//reader, err := r.GetBody()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	// data := []byte{}
+	// buf := make([]byte, 1024)
+	// for {
+	// 	n, err := reader.Read(buf)
+	// 	if err != nil {
+	// 		break
+	// 	}
+	// 	data = append(data, buf[:n]...)
+	// }
+	// reader.Close()
+	return body, nil
 }

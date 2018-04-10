@@ -3,6 +3,8 @@ package model
 import (
 	"document/config"
 	"log"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 // Document 文档
@@ -34,15 +36,15 @@ type Comment struct {
 
 // User 用户信息
 type User struct {
-	ID          string
-	NickName    string
-	Email       string
-	HeadPicture string
-	Bio         string
-	Like        []string
-	Passwd      string
-	Tel         string
-	RightLevel  uint
+	ID          bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	NickName    string        `json:"nick" bson:"nick"`
+	Email       string        `json:"email" bson:"email"`
+	HeadPicture string        `json:"headPic" bson:"headPic"`
+	Bio         string        `json:"bio" bson:"bio"`
+	Like        []string      `json:"like" bson:"like"`
+	Passwd      string        `json:"passwd" bson:"passwd"`
+	Tel         string        `json:"tel" bson:"tel"`
+	RightLevel  uint          `json:"right" bson:"right"`
 }
 
 // Docer 对数据的操作
@@ -64,13 +66,8 @@ type acticleInterface interface {
 	GetActicleMostComment() []Acticle
 	GetActicleMostView() []Acticle
 	GetActicleNewest() []Acticle
-}
-
-// Operater 所有操作接口
-type Operater interface {
-	commentInterface
-	acticleInterface
-	userInterface
+	IncreaseActiclPageview(is string)
+	Search(keyword string) []Acticle
 }
 
 // CommentInterface 操作评论的接口
@@ -83,13 +80,23 @@ type commentInterface interface {
 // UserInterface 用户操作接口
 type userInterface interface {
 	AddUser(user User) error
-	DelUser(id string) error
+	DelUserByID(id string) error
+	GetUserByID(id string) (User, error)
+	GetUserIDByNick(nick string) (string, error)
 	ModifyUser(user User) error
 	ModifyPasswd(id, passwd string) error
 	ModifyRight(id string, level uint) error
 	IsAvailableNickName(name string) bool
 	IsAvailableEmail(email string) bool
 	IsAvailableTel(tel string) bool
+	IsLogin(nick, passwd string) (string, bool)
+}
+
+// Operater 所有操作接口
+type Operater interface {
+	commentInterface
+	acticleInterface
+	userInterface
 }
 
 var operater Operater
@@ -105,6 +112,10 @@ func init() {
 	}
 	switch dbType {
 	case "mongodb":
+		operater, err = NewMongoDB()
+		if err != nil {
+			log.Fatalf("new mongo db error:%v", err)
+		}
 	case "mysql":
 	case "psql":
 	case "redis":

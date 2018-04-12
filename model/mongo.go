@@ -1,7 +1,11 @@
 package model
 
 import (
+	"crypto/md5"
+	"crypto/sha512"
 	"document/config"
+	"errors"
+	"fmt"
 	"log"
 
 	"gopkg.in/mgo.v2/bson"
@@ -14,6 +18,10 @@ const (
 	userColl = "user"
 	comment  = "comment"
 	arcticle = "arcticle"
+)
+
+var (
+	errDup = errors.New("nick、email or tel duplicate")
 )
 
 // mongodb ...
@@ -42,7 +50,34 @@ func NewMongoDB() (Operater, error) {
 	session.SetMode(mgo.Monotonic, true)
 
 	db := session.DB(dbName)
+
 	UserCollection := db.C(userColl)
+	index := mgo.Index{
+		Key:        []string{"nick"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	}
+	err = UserCollection.EnsureIndex(index)
+	if err != nil {
+		log.Fatalf("user ensure nick index error: % v ", err)
+	}
+
+	index.Key = []string{"email"}
+	err = UserCollection.EnsureIndex(index)
+	if err != nil {
+		log.Fatalf("user ensure email index error: % v ", err)
+	}
+
+	index.Key = []string{"tel"}
+	err = UserCollection.EnsureIndex(index)
+
+	if err != nil {
+		index.Key = []string{"tel"}
+		log.Fatalf("user ensure tel index error: % v ", err)
+	}
+
 	CommentCollection := db.C(comment)
 	ArcticleCollection := db.C(arcticle)
 
@@ -134,17 +169,23 @@ func (db mongodb) GetComment(id string) Comment {
 func (db mongodb) AddUser(user User) error {
 	userID := bson.NewObjectId()
 	user.ID = userID
+	user.Passwd = transPasswd(user.Passwd)
 	err := db.UserCollection.Insert(&user)
+	if mgo.IsDup(err) {
+		return errDup
+	}
 	return err
 }
 
 func (db mongodb) DelUserByID(id string) error {
-	return nil
+	err := db.UserCollection.Remove(bson.M{"_id": bson.ObjectIdHex(id)})
+	return err
 }
 
 func (db mongodb) GetUserByID(id string) (User, error) {
-
-	return User{}, nil
+	user := User{}
+	err := db.UserCollection.FindId(bson.ObjectIdHex(id)).One(&user)
+	return user, err
 }
 
 func (db mongodb) GetUserIDByNick(nick string) (string, error) {
@@ -216,3 +257,10 @@ func (db mongodb) IsLogin(nick, passwd string) (string, bool) {
 
 // 	fmt.Printf("user:%v\ncomment:%v\n", user1, comment1)
 // }
+
+func transPasswd(originalPasswd string) string {
+	shaPwd := sha512.Sum512([]byte(originalPasswd))
+	md5Pwd := md5.Sum(shaPwd[:])
+	newPwd := fmt.Sprintf("%x", md5Pwd)
+	return newPwd
+}

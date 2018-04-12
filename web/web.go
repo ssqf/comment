@@ -3,6 +3,7 @@ package web
 import (
 	"document/config"
 	"document/web/route"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -35,20 +36,16 @@ func post(w http.ResponseWriter, r *http.Request) {
 }
 
 func getBody(r *http.Request) ([]byte, error) {
-	//reader, err := r.GetBody()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}
-	// data := []byte{}
-	// buf := make([]byte, 1024)
-	// for {
-	// 	n, err := reader.Read(buf)
-	// 	if err != nil {
-	// 		break
-	// 	}
-	// 	data = append(data, buf[:n]...)
-	// }
-	// reader.Close()
 	return body, nil
+}
+
+func respError(errorInfo string) []byte {
+	errInfo := map[string]string{"errorInfo": errorInfo}
+	js, _ := json.Marshal(errInfo)
+	return js
+
 }
